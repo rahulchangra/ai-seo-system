@@ -481,13 +481,22 @@ export class AgentOrchestrator {
       phase: number;
     }> = [];
 
+    const directives =
+      Array.isArray(ceoPlan?.strategicDirectives) && ceoPlan.strategicDirectives.length > 0
+        ? ceoPlan.strategicDirectives
+        : [
+            "Eliminate all root canonical split issues across desktop and mobile entrypoints",
+            "Inject full schema.org entity graphs (Organization, WebSite) for rich snippet qualification",
+            "Streamline on-page meta headers and eliminate duplicate keyword cannibalization",
+          ];
+
     if (pmAgent) {
       const pmResult = await this.runtime.execute(
         pmAgent,
         {
-          ceoDirectives: ceoPlan.strategicDirectives,
+          ceoDirectives: directives,
           findings: allFindings,
-          operatingMode: project.operatingMode as "MODE_A" | "MODE_B",
+          operatingMode: (project.operatingMode as "MODE_A" | "MODE_B") || "MODE_B",
         },
         context
       );

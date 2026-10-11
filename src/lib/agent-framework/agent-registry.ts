@@ -371,9 +371,13 @@ export class AgentRegistry {
       systemPrompt:
         "You are the Project Manager Agent. You receive the CEO's strategic directives and audit findings, allocate work packages to specialist agents, monitor execution, and report final completion back to the CEO.",
       inputSchema: z.object({
-        ceoDirectives: z.array(z.string()),
-        findings: z.array(z.any()),
-        operatingMode: z.enum(["MODE_A", "MODE_B"]),
+        ceoDirectives: z.array(z.string()).default([
+          "Establish foundational technical crawl equity and fix indexation blockers",
+          "Inject structured data entities (Organization & WebSite) to secure rich snippets",
+          "Consolidate domain authority and eliminate internal duplicate URL canonical splits",
+        ]),
+        findings: z.array(z.any()).default([]),
+        operatingMode: z.enum(["MODE_A", "MODE_B"]).default("MODE_B"),
       }),
       outputSchema: z.object({
         delegatedTasks: z.array(

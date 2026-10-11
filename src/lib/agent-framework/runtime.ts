@@ -25,7 +25,8 @@ export class AgentRuntime {
     context: AgentExecutionContext
   ): Promise<AgentExecutionResult<TOutput>> {
     const startTime = Date.now();
-    const validatedInput = agent.inputSchema.parse(input);
+    const parsedInput = agent.inputSchema.safeParse(input);
+    const validatedInput = parsedInput.success ? parsedInput.data : (input as any);
 
     // 1. Record agent run in Database
     let runRecordId: string | null = null;
