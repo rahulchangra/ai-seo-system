@@ -53,9 +53,9 @@ export function OverviewTab({
             )}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-semibold text-white">
-                {project.website?.url || "Target Website"}
+                {project.website?.url || "https://example.com"}
               </h2>
               <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
                 {project.operatingMode === "MODE_A"

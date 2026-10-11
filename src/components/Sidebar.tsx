@@ -77,7 +77,7 @@ export function Sidebar({ activeTab, onSelectTab, project }: SidebarProps) {
               {project.name}
             </div>
             <div className="text-[10px] text-indigo-400 font-mono truncate">
-              {project.website?.url || "No website"}
+              {project.website?.url || "https://example.com"}
             </div>
           </div>
         )}
