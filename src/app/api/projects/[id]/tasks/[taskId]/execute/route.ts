@@ -3,6 +3,8 @@ import { AgentOrchestrator } from "@/lib/agent-framework/orchestrator";
 import { db } from "@/lib/db";
 import { LifecycleStateMachine } from "@/lib/lifecycle/state-machine";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   _req: Request,
   { params }: { params: { id: string; taskId: string } }

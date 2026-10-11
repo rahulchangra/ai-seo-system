@@ -12,6 +12,8 @@ const createProjectSchema = z.object({
   targetLanguage: z.string().default("en"),
 });
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const projects = await db.project.findMany({

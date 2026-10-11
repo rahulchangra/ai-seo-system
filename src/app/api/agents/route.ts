@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { AgentRegistry } from "@/lib/agent-framework/agent-registry";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const registry = AgentRegistry.getInstance();
