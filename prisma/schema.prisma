@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+  projects    Project[]
+  auditLogs   AuditLog[]
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String?
+  role           String        @default("MEMBER") // ADMIN, OWNER, MEMBER
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  approvals      TaskApproval[]
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  targetKeywords String?         // JSON string or comma-separated
+  targetCountry  String          @default("US")
+  targetLanguage String          @default("en")
+  operatingMode  String          @default("MODE_B") // MODE_A (Source Code / GitHub), MODE_B (No-Code / CMS)
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  website        Website?
+  crawls         CrawlRun[]
+  findings       SeoFinding[]
+  roadmapTasks   RoadmapTask[]
+  agentRuns      AgentRun[]
+  memoryRecords  ProjectMemoryRecord[]
+  integrations   IntegrationConfig[]
+  auditLogs      AuditLog[]
+}
+
+model Website {
+  id             String     @id @default(cuid())
+  url            String
+  domain         String
+  cmsDetected    String?    // WordPress, Shopify, Next.js, Custom, etc.
+  repoUrl        String?
+  repoBranch     String?    @default("main")
+  projectId      String     @unique
+  project        Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model CrawlRun {
+  id             String        @id @default(cuid())
+  projectId      String
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  baseUrl        String
+  status         String        @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  totalPages     Int           @default(0)
+  durationMs     Int           @default(0)
+  errorMessage   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  pages          CrawledPage[]
+  findings       SeoFinding[]
+}
+
+model CrawledPage {
+  id             String     @id @default(cuid())
+  crawlRunId     String
+  crawlRun       CrawlRun   @relation(fields: [crawlRunId], references: [id], onDelete: Cascade)
+  url            String
+  statusCode     Int        @default(200)
+  loadTimeMs     Int        @default(0)
+  title          String?
+  metaDescription String?
+  canonicalUrl   String?
+  robotsMeta     String?
+  h1Tags         String?    // JSON string array
+  h2Tags         String?    // JSON string array
+  internalLinks  String?    // JSON string array of URLs
+  externalLinks  String?    // JSON string array of URLs
+  imageCount     Int        @default(0)
+  missingAltCount Int       @default(0)
+  schemaTypes    String?    // JSON string array
+  wordCount      Int        @default(0)
+  contentHash    String?
+  createdAt      DateTime   @default(now())
+}
+
+model SeoFinding {
+  id              String      @id @default(cuid())
+  projectId       String
+  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  crawlRunId      String?
+  crawlRun        CrawlRun?   @relation(fields: [crawlRunId], references: [id], onDelete: SetNull)
+  category        String      // TECHNICAL, ON_PAGE, STRUCTURED_DATA, PERFORMANCE, CONTENT, ARCHITECTURE
+  title           String
+  description     String
+  evidence        String      // Structured JSON string with affected URLs, snippets, stats
+  severity        String      @default("MEDIUM") // CRITICAL, HIGH, MEDIUM, LOW, INFO
+  confidence      Float       @default(0.95)
+  recommendedFix  String
+  status          String      @default("OPEN") // OPEN, CONVERTED_TO_TASK, RESOLVED, DISMISSED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  roadmapTasks    RoadmapTask[]
+}
+
+model RoadmapTask {
+  id                 String          @id @default(cuid())
+  projectId          String
+  project            Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  findingId          String?
+  finding            SeoFinding?     @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  title              String
+  description        String
+  assignedAgent      String          // Name or ID of assigned specialized agent
+  priority           String          @default("MEDIUM") // CRITICAL, HIGH, MEDIUM, LOW
+  status             String          @default("DISCOVERED") 
+  // DISCOVERED -> AUDITED -> ROADMAP_GENERATED -> AWAITING_APPROVAL -> APPROVED -> QUEUED -> EXECUTING -> VERIFYING -> COMPLETED
+  // BLOCKED, FAILED, CANCELLED, REJECTED, ROLLBACK_REQUIRED, ROLLED_BACK
+  affectedUrls       String          // JSON array of URLs
+  evidence           String          // Evidence JSON
+  acceptanceCriteria String          // Checkable rules
+  executionStrategy  String          // "CODE_PATCH", "CMS_API", "MANUAL_BRIEF"
+  riskLevel          String          @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  requiresApproval   Boolean         @default(true)
+  phase              Int             @default(1)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  approvals          TaskApproval[]
+  codeChanges        CodeChange[]
+  verificationResults VerificationResult[]
+  dependencies       TaskDependency[] @relation("DependentTasks")
+  prerequisites      TaskDependency[] @relation("PrerequisiteTasks")
+}
+
+model TaskDependency {
+  id             String      @id @default(cuid())
+  taskId         String
+  task           RoadmapTask @relation("DependentTasks", fields: [taskId], references: [id], onDelete: Cascade)
+  prerequisiteId String
+  prerequisite   RoadmapTask @relation("PrerequisiteTasks", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+}
+
+model TaskApproval {
+  id             String      @id @default(cuid())
+  taskId         String
+  task           RoadmapTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status         String      // APPROVED, REJECTED, AUTO_APPROVED
+  note           String?
+  createdAt      DateTime    @default(now())
+}
+
+model AgentDefinitionRecord {
+  id             String   @id // e.g. "technical-seo-agent"
+  name           String
+  purpose        String
+  systemPrompt   String
+  allowedTools   String   // JSON string array
+  riskLevel      String   @default("LOW")
+  modelConfig    String   // JSON string
+  timeoutMs      Int      @default(60000)
+  maxRetries     Int      @default(3)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AgentRun {
+  id             String          @id @default(cuid())
+  projectId      String
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  agentId        String
+  status         String          @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  prompt         String?
+  inputContext   String?         // JSON
+  outputSummary  String?
+  tokensUsed     Int             @default(0)
+  executionCost  Float           @default(0.0)
+  durationMs     Int             @default(0)
+  errorMessage   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  toolExecutions ToolExecution[]
+}
+
+model ToolExecution {
+  id             String      @id @default(cuid())
+  agentRunId     String
+  agentRun       AgentRun    @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  toolName       String
+  inputPayload   String      // JSON
+  outputPayload  String?     // JSON
+  status         String      @default("SUCCESS") // SUCCESS, FAILED, BLOCKED_PERMISSION
+  durationMs     Int         @default(0)
+  createdAt      DateTime    @default(now())
+}
+
+model CodeChange {
+  id             String      @id @default(cuid())
+  taskId         String
+  task           RoadmapTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  filePath       String
+  diffSnippet    String
+  branchName     String
+  pullRequestUrl String?
+  commitSha      String?
+  status         String      @default("STAGED") // STAGED, COMMITTED, PR_OPENED, MERGED, REVERTED
+  createdAt      DateTime    @default(now())
+}
+
+model VerificationResult {
+  id             String      @id @default(cuid())
+  taskId         String
+  task           RoadmapTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  passed         Boolean
+  checkedUrl     String
+  criteriaEvaluated String   // JSON of criteria and check results
+  beforeState    String?     // JSON
+  afterState     String?     // JSON
+  notes          String?
+  createdAt      DateTime    @default(now())
+}
+
+model ProjectMemoryRecord {
+  id             String      @id @default(cuid())
+  projectId      String
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category       String      // TECH_STACK, BRAND_VOICE, COMPETITORS, KEYWORDS, USER_PREFERENCE
+  key            String
+  value          String      // JSON or text
+  confidence     Float       @default(1.0)
+  updatedAt      DateTime    @updatedAt
+}
+
+model IntegrationConfig {
+  id             String      @id @default(cuid())
+  projectId      String
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  provider       String      // GITHUB, WORDPRESS, GSC, GA4, SHOPIFY
+  encryptedCreds String      // Encrypted tokens or credentials
+  capabilities   String      // JSON string array: ["read_pages", "write_posts", "read_analytics"]
+  isConnected    Boolean     @default(false)
+  lastSyncAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectId      String?
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  actorType      String       // USER, AGENT, SYSTEM
+  actorId        String
+  action         String
+  targetResource String
+  metadata       String?      // JSON
+  createdAt      DateTime     @default(now())
+}
