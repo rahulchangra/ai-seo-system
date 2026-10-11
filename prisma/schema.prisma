@@ -51,6 +51,10 @@ model Project {
   memoryRecords  ProjectMemoryRecord[]
   integrations   IntegrationConfig[]
   auditLogs      AuditLog[]
+  keywords       KeywordCluster[]
+  articles       ContentArticle[]
+  competitors    CompetitorProfile[]
+  performanceAudits PerformanceAudit[]
 }
 
 model Website {
@@ -134,8 +138,6 @@ model RoadmapTask {
   assignedAgent      String          // Name or ID of assigned specialized agent
   priority           String          @default("MEDIUM") // CRITICAL, HIGH, MEDIUM, LOW
   status             String          @default("DISCOVERED") 
-  // DISCOVERED -> AUDITED -> ROADMAP_GENERATED -> AWAITING_APPROVAL -> APPROVED -> QUEUED -> EXECUTING -> VERIFYING -> COMPLETED
-  // BLOCKED, FAILED, CANCELLED, REJECTED, ROLLBACK_REQUIRED, ROLLED_BACK
   affectedUrls       String          // JSON array of URLs
   evidence           String          // Evidence JSON
   acceptanceCriteria String          // Checkable rules
@@ -259,7 +261,7 @@ model IntegrationConfig {
   project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   provider       String      // GITHUB, WORDPRESS, GSC, GA4, SHOPIFY
   encryptedCreds String      // Encrypted tokens or credentials
-  capabilities   String      // JSON string array: ["read_pages", "write_posts", "read_analytics"]
+  capabilities   String      // JSON string array
   isConnected    Boolean     @default(false)
   lastSyncAt     DateTime?
   createdAt      DateTime    @default(now())
@@ -278,4 +280,60 @@ model AuditLog {
   targetResource String
   metadata       String?      // JSON
   createdAt      DateTime     @default(now())
+}
+
+// Module 1: Keyword Research
+model KeywordCluster {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  seedKeyword    String
+  clusterName    String
+  searchIntent   String    // INFORMATIONAL, COMMERCIAL, TRANSACTIONAL, NAVIGATIONAL
+  mappedUrl      String?
+  keywordsJson   String    // Array of keywords with difficulty, relevance
+  hasCannibalization Boolean @default(false)
+  createdAt      DateTime  @default(now())
+}
+
+// Module 2: Content Studio
+model ContentArticle {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String
+  metaDescription String
+  targetKeyword  String
+  articleMarkdown String
+  wordCount      Int       @default(0)
+  status         String    @default("DRAFT") // DRAFT, REVIEW, APPROVED, PUBLISHED
+  publishedUrl   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Module 3: Competitor Analysis
+model CompetitorProfile {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  domain         String
+  overlapScore   Float     @default(0.0)
+  contentGapsJson String   // JSON array of detected content gaps
+  strengthsJson  String?   // JSON array
+  createdAt      DateTime  @default(now())
+}
+
+// Module 4: Performance Audits
+model PerformanceAudit {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url            String
+  performanceScore Int     @default(85)
+  lcpMs          Int       @default(1200) // Largest Contentful Paint
+  clsScore       Float     @default(0.02) // Cumulative Layout Shift
+  fidMs          Int       @default(45)   // First Input Delay
+  opportunitiesJson String // JSON array of performance fixes
+  createdAt      DateTime  @default(now())
 }

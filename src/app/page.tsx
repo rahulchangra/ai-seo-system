@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  LayoutDashboard,
-  Search,
-  ListTodo,
-  Bot,
-  Settings,
-  Sparkles,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { Loader2, Plus, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { Sidebar } from "@/components/Sidebar";
 import { OverviewTab } from "@/components/OverviewTab";
 import { AuditTab } from "@/components/AuditTab";
 import { RoadmapTab } from "@/components/RoadmapTab";
 import { AgentCenterTab } from "@/components/AgentCenterTab";
+import { KeywordResearchTab } from "@/components/KeywordResearchTab";
+import { ContentStudioTab } from "@/components/ContentStudioTab";
+import { CompetitorTab } from "@/components/CompetitorTab";
+import { PerformanceTab } from "@/components/PerformanceTab";
+import { IntegrationsTab } from "@/components/IntegrationsTab";
+import { ReportsTab } from "@/components/ReportsTab";
+import { ActivityLogTab } from "@/components/ActivityLogTab";
+import { SettingsTab } from "@/components/SettingsTab";
+import { BillingTab } from "@/components/BillingTab";
 import { NewProjectModal } from "@/components/NewProjectModal";
 
 export default function SaaSApp() {
@@ -91,11 +92,11 @@ export default function SaaSApp() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#090d16] text-white">
+      <div className="flex h-screen items-center justify-center bg-[#070b12] text-white">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
           <span className="text-xs text-slate-400 font-mono tracking-wider">
-            INITIALIZING AUTONOMOUS SAAS ENGINE...
+            LOADING AUTONOMOUS SAAS ENGINE...
           </span>
         </div>
       </div>
@@ -114,119 +115,96 @@ export default function SaaSApp() {
         isAuditing={isAuditing}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full">
-        {selectedProject ? (
-          <div className="space-y-6">
-            {/* Tabs Header */}
-            <div className="flex items-center gap-1.5 border-b border-slate-800/80 pb-2 overflow-x-auto">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
-                  activeTab === "overview"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Project Dashboard
-              </button>
+      {/* Main SaaS Layout with Sidebar */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={(tab) => setActiveTab(tab)}
+          project={selectedProject}
+        />
 
-              <button
-                onClick={() => setActiveTab("audit")}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
-                  activeTab === "audit"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
-              >
-                <Search className="h-4 w-4" />
-                Website Audit & Evidence
-                {selectedProject.findings?.length > 0 && (
-                  <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] text-slate-300">
-                    {selectedProject.findings.length}
-                  </span>
-                )}
-              </button>
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full">
+          {selectedProject ? (
+            <div className="space-y-6">
+              {/* Active Module View */}
+              {activeTab === "overview" && (
+                <OverviewTab
+                  project={selectedProject}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onTriggerAudit={handleTriggerAudit}
+                  isAuditing={isAuditing}
+                />
+              )}
 
-              <button
-                onClick={() => setActiveTab("roadmap")}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
-                  activeTab === "roadmap"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
-              >
-                <ListTodo className="h-4 w-4" />
-                SEO Roadmap & Verification
-                {selectedProject.roadmapTasks?.length > 0 && (
-                  <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] text-slate-300">
-                    {selectedProject.roadmapTasks.length}
-                  </span>
-                )}
-              </button>
+              {activeTab === "audit" && <AuditTab project={selectedProject} />}
 
+              {activeTab === "roadmap" && (
+                <RoadmapTab
+                  project={selectedProject}
+                  onRefreshProject={() => loadProjectDetails(selectedProject.id)}
+                />
+              )}
+
+              {activeTab === "agents" && <AgentCenterTab project={selectedProject} />}
+
+              {activeTab === "keywords" && (
+                <KeywordResearchTab project={selectedProject} />
+              )}
+
+              {activeTab === "content" && (
+                <ContentStudioTab project={selectedProject} />
+              )}
+
+              {activeTab === "competitors" && (
+                <CompetitorTab project={selectedProject} />
+              )}
+
+              {activeTab === "performance" && (
+                <PerformanceTab project={selectedProject} />
+              )}
+
+              {activeTab === "integrations" && (
+                <IntegrationsTab
+                  project={selectedProject}
+                  onRefreshProject={() => loadProjectDetails(selectedProject.id)}
+                />
+              )}
+
+              {activeTab === "reports" && <ReportsTab project={selectedProject} />}
+
+              {activeTab === "activity" && <ActivityLogTab project={selectedProject} />}
+
+              {activeTab === "settings" && <SettingsTab />}
+
+              {activeTab === "billing" && <BillingTab project={selectedProject} />}
+            </div>
+          ) : (
+            /* Empty State: Create First Project */
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-900/20 py-24 px-6 text-center space-y-4 my-10">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-xl">
+                <Sparkles className="h-8 w-8" />
+              </div>
+              <div className="space-y-1 max-w-md">
+                <h2 className="text-xl font-bold text-white">
+                  Welcome to Autonomous AI SEO SaaS
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Enter your website URL to initiate autonomous crawling, technical diagnostics, and self-executing optimization roadmaps.
+                </p>
+              </div>
               <button
-                onClick={() => setActiveTab("agents")}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all ${
-                  activeTab === "agents"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900"
-                }`}
+                onClick={() => setIsNewProjectModalOpen(true)}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all"
               >
-                <Bot className="h-4 w-4" />
-                Agent Control Center
-                <span className="rounded-full bg-emerald-500/10 text-emerald-400 px-1.5 py-0.2 text-[10px]">
-                  17 active
-                </span>
+                <Plus className="h-4 w-4" />
+                Create First SEO Project
               </button>
             </div>
-
-            {/* Active Tab View */}
-            {activeTab === "overview" && (
-              <OverviewTab
-                project={selectedProject}
-                onNavigateTab={(tab) => setActiveTab(tab)}
-                onTriggerAudit={handleTriggerAudit}
-                isAuditing={isAuditing}
-              />
-            )}
-
-            {activeTab === "audit" && <AuditTab project={selectedProject} />}
-
-            {activeTab === "roadmap" && (
-              <RoadmapTab
-                project={selectedProject}
-                onRefreshProject={() => loadProjectDetails(selectedProject.id)}
-              />
-            )}
-
-            {activeTab === "agents" && <AgentCenterTab project={selectedProject} />}
-          </div>
-        ) : (
-          /* Empty State: Prompt to Create Project */
-          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-900/20 py-20 px-6 text-center space-y-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-xl">
-              <Sparkles className="h-8 w-8" />
-            </div>
-            <div className="space-y-1 max-w-md">
-              <h2 className="text-xl font-bold text-white">
-                Welcome to Autonomous AI SEO SaaS
-              </h2>
-              <p className="text-xs text-slate-400">
-                Enter your website URL to initiate autonomous crawling, technical diagnostics, and self-executing optimization roadmaps.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsNewProjectModalOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              Create First SEO Project
-            </button>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
 
       {/* New Project Modal */}
       <NewProjectModal
