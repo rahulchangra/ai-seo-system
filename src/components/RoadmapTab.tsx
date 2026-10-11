@@ -12,16 +12,20 @@ import {
   FileCode,
   AlertCircle,
   ExternalLink,
+  Crown,
+  Zap,
 } from "lucide-react";
 
 interface RoadmapTabProps {
   project: any;
   onRefreshProject: () => void;
+  onOpenAutopilot?: () => void;
 }
 
-export function RoadmapTab({ project, onRefreshProject }: RoadmapTabProps) {
+export function RoadmapTab({ project, onRefreshProject, onOpenAutopilot }: RoadmapTabProps) {
   const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
   const [activeTaskDetail, setActiveTaskDetail] = useState<any | null>(null);
+  const [isExecutingAll, setIsExecutingAll] = useState(false);
 
   const tasks = project.roadmapTasks || [];
 
@@ -59,11 +63,85 @@ export function RoadmapTab({ project, onRefreshProject }: RoadmapTabProps) {
     }
   };
 
+  const handleExecuteAll = async () => {
+    setIsExecutingAll(true);
+    try {
+      const pendingTasks = tasks.filter((t: any) => t.status !== "COMPLETED");
+      for (const t of pendingTasks) {
+        if (t.status === "AWAITING_APPROVAL") {
+          await fetch(`/api/projects/${project.id}/tasks/${t.id}/approve`, { method: "POST" });
+        }
+        await fetch(`/api/projects/${project.id}/tasks/${t.id}/execute`, { method: "POST" });
+      }
+      onRefreshProject();
+    } catch (e: any) {
+      alert("Error executing tasks: " + e.message);
+    } finally {
+      setIsExecutingAll(false);
+    }
+  };
+
   // Group by Phase
   const phases = Array.from(new Set(tasks.map((t: any) => t.phase || 1))).sort() as number[];
 
   return (
     <div className="space-y-6">
+      {/* CEO & PM Autonomous Hierarchy Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900/60 to-indigo-950/30 p-5 shadow-xl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+              <Crown className="h-6 w-6 text-amber-200" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">
+                  Autonomous CEO & Project Manager Mode
+                </h3>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                  Fully Self-Executing
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                CEO Agent creates strategic plan $\rightarrow$ Project Manager Agent delegates to specialist agents $\rightarrow$ QA verifies live. Zero manual click-by-click intervention needed.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {onOpenAutopilot && (
+              <button
+                onClick={onOpenAutopilot}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-indigo-600 to-cyan-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:brightness-110 transition-all"
+              >
+                <Zap className="h-4 w-4 text-amber-300" />
+                Launch CEO Autopilot
+              </button>
+            )}
+
+            {tasks.some((t: any) => t.status !== "COMPLETED") && (
+              <button
+                onClick={handleExecuteAll}
+                disabled={isExecutingAll}
+                className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-950/60 px-4 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-900/60 disabled:opacity-50 transition-all"
+              >
+                {isExecutingAll ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+                    Executing All...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3.5 w-3.5 text-emerald-400" />
+                    Auto-Execute & Verify All Tasks
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -37,14 +37,22 @@ describe("Agent Framework and Runtime", () => {
     testProjectId = project.id;
   });
 
-  it("loads all 17 specialized agent definitions", () => {
+  it("loads all 19 specialized and executive agent definitions", () => {
     const agents = registry.getAllAgents();
-    expect(agents.length).toBe(17);
+    expect(agents.length).toBe(19);
 
     const techAgent = registry.getAgent("technical-seo-agent");
     expect(techAgent).toBeDefined();
     expect(techAgent?.name).toBe("Technical SEO Agent");
     expect(techAgent?.allowedTools).toContain("fetch_page");
+
+    const ceoAgent = registry.getAgent("autonomous-ceo-agent");
+    expect(ceoAgent).toBeDefined();
+    expect(ceoAgent?.name).toBe("Autonomous CEO Agent");
+
+    const pmAgent = registry.getAgent("project-manager-agent");
+    expect(pmAgent).toBeDefined();
+    expect(pmAgent?.name).toBe("Project Manager Agent");
   });
 
   it("validates registered tools with schemas and permissions", () => {

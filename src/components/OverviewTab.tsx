@@ -11,12 +11,15 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Clock,
+  Crown,
+  Zap,
 } from "lucide-react";
 
 interface OverviewTabProps {
   project: any;
   onNavigateTab: (tab: string) => void;
   onTriggerAudit: () => void;
+  onOpenAutopilot?: () => void;
   isAuditing: boolean;
 }
 
@@ -24,6 +27,7 @@ export function OverviewTab({
   project,
   onNavigateTab,
   onTriggerAudit,
+  onOpenAutopilot,
   isAuditing,
 }: OverviewTabProps) {
   if (!project) return null;
@@ -70,11 +74,21 @@ export function OverviewTab({
           </div>
         </div>
 
-        <div className="mt-4 sm:mt-0 flex gap-2">
+        <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
+          {onOpenAutopilot && (
+            <button
+              onClick={onOpenAutopilot}
+              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-indigo-600 to-cyan-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:brightness-110 transition-all"
+            >
+              <Crown className="h-3.5 w-3.5 text-amber-300" />
+              Launch CEO Autopilot
+            </button>
+          )}
+
           <button
             onClick={onTriggerAudit}
             disabled={isAuditing}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-600/20"
+            className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition-all shadow-md"
           >
             {isAuditing ? "Agents Processing..." : "Re-run Full Audit"}
           </button>

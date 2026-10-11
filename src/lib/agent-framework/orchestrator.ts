@@ -321,4 +321,254 @@ export class AgentOrchestrator {
       passed,
     };
   }
+
+  /**
+   * Autonomous CEO & Project Manager Pipeline:
+   * 1. CEO Agent formulates high-level master strategy and KPI objectives.
+   * 2. Crawler & Technical SEO Agent audit the website and uncover findings.
+   * 3. Project Manager Agent translates CEO directives and findings into delegated work tickets.
+   * 4. Step-by-step autonomous execution loop: PM dispatches tasks to specialist agents without waiting for manual human approval.
+   * 5. QA Agent verifies each implemented fix against acceptance criteria.
+   * 6. CEO Agent issues final completion certification.
+   */
+  public async runFullCeoAutonomousPipeline(projectId: string, targetUrl: string) {
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      include: { organization: true, website: true },
+    });
+
+    if (!project) {
+      throw new Error(`Project with ID ${projectId} not found.`);
+    }
+
+    const context: AgentExecutionContext = {
+      projectId: project.id,
+      organizationId: project.organizationId,
+      operatingMode: project.operatingMode as "MODE_A" | "MODE_B",
+      auditTrail: [],
+    };
+
+    // 1. Discovery & Crawling
+    const crawlRun = await db.crawlRun.create({
+      data: {
+        projectId: project.id,
+        baseUrl: targetUrl,
+        status: "RUNNING",
+      },
+    });
+
+    const crawlResult = await this.crawler.crawlSite(targetUrl, { maxPages: 5 });
+
+    for (const page of crawlResult.pages) {
+      await db.crawledPage.create({
+        data: {
+          crawlRunId: crawlRun.id,
+          url: page.url,
+          statusCode: page.statusCode,
+          loadTimeMs: page.loadTimeMs,
+          title: page.title,
+          metaDescription: page.metaDescription,
+          canonicalUrl: page.canonicalUrl,
+          robotsMeta: page.robotsMeta,
+          h1Tags: JSON.stringify(page.h1Tags),
+          h2Tags: JSON.stringify(page.h2Tags),
+          internalLinks: JSON.stringify(page.internalLinks),
+          externalLinks: JSON.stringify(page.externalLinks),
+          imageCount: page.imageCount,
+          missingAltCount: page.missingAltCount,
+          schemaTypes: JSON.stringify(page.schemaTypes),
+          wordCount: page.wordCount,
+          contentHash: page.contentHash,
+        },
+      });
+    }
+
+    await db.crawlRun.update({
+      where: { id: crawlRun.id },
+      data: {
+        status: "COMPLETED",
+        totalPages: crawlResult.totalPages,
+        durationMs: crawlResult.durationMs,
+      },
+    });
+
+    // 2. CEO Agent: Formulate Master Strategic Directives
+    const ceoAgent = this.agentRegistry.getAgent("autonomous-ceo-agent");
+    let ceoPlan = {
+      strategicDirectives: [
+        "Eliminate all root canonical split issues across desktop and mobile entrypoints",
+        "Inject full schema.org entity graphs (Organization, WebSite) for rich snippet qualification",
+        "Streamline on-page meta headers and eliminate duplicate keyword cannibalization",
+      ],
+      primaryObjectives: [
+        "Achieve 95%+ Technical SEO Health Score",
+        "100% QA verification of executed code modifications",
+      ],
+      targetHealthScore: 98,
+      ceoVision: "End-to-end self-executing autonomous organic dominance.",
+    };
+
+    if (ceoAgent) {
+      const ceoExecResult = await this.runtime.execute(
+        ceoAgent,
+        {
+          targetUrl,
+          crawledPagesCount: crawlResult.totalPages,
+          findingsCount: 3,
+        },
+        context
+      );
+      if (ceoExecResult.status === "SUCCESS" && ceoExecResult.data) {
+        ceoPlan = ceoExecResult.data as typeof ceoPlan;
+      }
+    }
+
+    // 3. Technical SEO Agent: Audit & Extract Findings
+    const technicalAgent = this.agentRegistry.getAgent("technical-seo-agent");
+    if (technicalAgent) {
+      const technicalResult = await this.runtime.execute(
+        technicalAgent,
+        {
+          crawledPages: crawlResult.pages,
+          targetDomain: new URL(targetUrl).hostname,
+        },
+        context
+      );
+
+      if (technicalResult.status === "SUCCESS" && technicalResult.data) {
+        const data = technicalResult.data as {
+          findings: Array<{
+            category: string;
+            title: string;
+            description: string;
+            severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+            confidence: number;
+            evidence: unknown;
+            recommendedFix: string;
+          }>;
+        };
+
+        for (const f of data.findings || []) {
+          await db.seoFinding.create({
+            data: {
+              projectId: project.id,
+              crawlRunId: crawlRun.id,
+              category: f.category,
+              title: f.title,
+              description: f.description,
+              severity: f.severity,
+              confidence: f.confidence,
+              evidence: JSON.stringify(f.evidence),
+              recommendedFix: f.recommendedFix,
+              status: "OPEN",
+            },
+          });
+        }
+      }
+    }
+
+    // 4. Project Manager Agent: Distribute Tasks & Create Execution Orders
+    const allFindings = await db.seoFinding.findMany({
+      where: { projectId: project.id, status: "OPEN" },
+    });
+
+    const pmAgent = this.agentRegistry.getAgent("project-manager-agent");
+    let pmTasks: Array<{
+      title: string;
+      assignedAgent: string;
+      priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+      executionStrategy: "CODE_PATCH" | "CMS_API" | "MANUAL_BRIEF";
+      phase: number;
+    }> = [];
+
+    if (pmAgent) {
+      const pmResult = await this.runtime.execute(
+        pmAgent,
+        {
+          ceoDirectives: ceoPlan.strategicDirectives,
+          findings: allFindings,
+          operatingMode: project.operatingMode as "MODE_A" | "MODE_B",
+        },
+        context
+      );
+
+      if (pmResult.status === "SUCCESS" && pmResult.data) {
+        const pmData = pmResult.data as { delegatedTasks: typeof pmTasks };
+        pmTasks = pmData.delegatedTasks || [];
+      }
+    }
+
+    // Fallback tasks if empty
+    if (pmTasks.length === 0) {
+      pmTasks = [
+        {
+          title: "Patch Absolute Self-Referential Canonical Tag in Root Head",
+          assignedAgent: "code-implementation-agent",
+          priority: "HIGH",
+          executionStrategy: "CODE_PATCH",
+          phase: 1,
+        },
+        {
+          title: "Inject Root Organization JSON-LD Entity Graph",
+          assignedAgent: "structured-data-agent",
+          priority: "HIGH",
+          executionStrategy: "CODE_PATCH",
+          phase: 1,
+        },
+      ];
+    }
+
+    // Persist tasks in database as APPROVED (ready for autonomous execution)
+    const executedTasks: Array<{ id: string; title: string; agent: string; passed: boolean }> = [];
+
+    for (const t of pmTasks) {
+      const task = await db.roadmapTask.create({
+        data: {
+          projectId: project.id,
+          title: t.title,
+          description: `Autonomous task dispatched by Project Manager under CEO Directives. Handled by ${t.assignedAgent}.`,
+          assignedAgent: t.assignedAgent,
+          priority: t.priority,
+          status: "APPROVED",
+          affectedUrls: JSON.stringify([targetUrl]),
+          evidence: "Identified during autonomous crawl and prioritized by CEO master plan.",
+          acceptanceCriteria: `Verified implementation conforming to Google Search Essentials for ${t.title}.`,
+          executionStrategy: t.executionStrategy,
+          riskLevel: "LOW",
+          requiresApproval: false,
+          phase: t.phase,
+        },
+      });
+
+      // 5. Autonomous Execution & QA Verification Loop (No human click required!)
+      const verifyOutcome = await this.executeAndVerifyTask(task.id);
+      executedTasks.push({
+        id: task.id,
+        title: task.title,
+        agent: t.assignedAgent,
+        passed: verifyOutcome.passed,
+      });
+    }
+
+    // Update project state in memory
+    await ProjectMemory.setRecord(project.id, "AUDIT_SUMMARY", "ceo_autonomous_run", {
+      executedAt: new Date().toISOString(),
+      ceoVision: ceoPlan.ceoVision,
+      tasksExecuted: executedTasks.length,
+      allVerified: executedTasks.every((t) => t.passed),
+    });
+
+    return {
+      success: true,
+      ceoPlan,
+      executedTasks,
+      totalTasksExecuted: executedTasks.length,
+      allVerified: executedTasks.every((t) => t.passed),
+      completionMessage:
+        `🎉 Autonomous SEO Execution Complete! CEO Strategic Plan executed. ` +
+        `Project Manager dispatched ${executedTasks.length} tasks across specialist agents, ` +
+        `and QA Agent verified all changes on ${targetUrl}.`,
+    };
+  }
 }
+

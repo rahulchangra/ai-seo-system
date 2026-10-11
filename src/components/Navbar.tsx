@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Globe, Plus, Cpu, ChevronDown } from "lucide-react";
+import { Sparkles, Globe, Plus, Cpu, ChevronDown, Crown } from "lucide-react";
 
 interface NavbarProps {
   projects: any[];
@@ -8,6 +8,7 @@ interface NavbarProps {
   onSelectProject: (proj: any) => void;
   onOpenNewProject: () => void;
   onTriggerAudit: () => void;
+  onOpenAutopilot: () => void;
   isAuditing: boolean;
 }
 
@@ -17,6 +18,7 @@ export function Navbar({
   onSelectProject,
   onOpenNewProject,
   onTriggerAudit,
+  onOpenAutopilot,
   isAuditing,
 }: NavbarProps) {
   return (
@@ -73,14 +75,24 @@ export function Navbar({
           </div>
 
           {selectedProject && (
-            <button
-              onClick={onTriggerAudit}
-              disabled={isAuditing}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-50 transition-all"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {isAuditing ? "Autonomous Agents Running..." : "Run SEO Audit"}
-            </button>
+            <>
+              <button
+                onClick={onOpenAutopilot}
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-indigo-600 to-cyan-500 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:brightness-110 transition-all"
+              >
+                <Crown className="h-3.5 w-3.5 text-amber-300" />
+                Autopilot (CEO Mode)
+              </button>
+
+              <button
+                onClick={onTriggerAudit}
+                disabled={isAuditing}
+                className="flex items-center gap-2 rounded-lg bg-slate-800 border border-slate-700 px-3.5 py-2 text-xs font-semibold text-white shadow-md hover:bg-slate-700 disabled:opacity-50 transition-all"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                {isAuditing ? "Auditing..." : "Run Audit"}
+              </button>
+            </>
           )}
 
           <button

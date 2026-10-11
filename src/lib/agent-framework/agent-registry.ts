@@ -337,5 +337,61 @@ export class AgentRegistry {
       executionLimits: { maxIterations: 4, timeoutMs: 45000, maxRetries: 2, maxTokensBudget: 4000 },
       requiresApprovalForActions: false,
     });
+
+    // 18. Autonomous CEO Strategic Agent
+    this.agents.set("autonomous-ceo-agent", {
+      id: "autonomous-ceo-agent",
+      name: "Autonomous CEO Agent",
+      purpose: "Acts as Chief Executive Officer. Directs overall SEO business objectives, formulates executive directives, and oversees end-to-end execution.",
+      systemPrompt:
+        "You are the Autonomous CEO Agent. You analyze the target website, market opportunity, and audit findings to establish strategic high-level directives for the Project Manager and ensure full completion.",
+      inputSchema: z.object({
+        targetUrl: z.string(),
+        crawledPagesCount: z.number(),
+        findingsCount: z.number(),
+      }),
+      outputSchema: z.object({
+        strategicDirectives: z.array(z.string()),
+        primaryObjectives: z.array(z.string()),
+        targetHealthScore: z.number(),
+        ceoVision: z.string(),
+      }),
+      allowedTools: ["save_roadmap_task"],
+      riskLevel: "LOW",
+      modelConfig: { temperature: 0.2 },
+      executionLimits: { maxIterations: 4, timeoutMs: 45000, maxRetries: 2, maxTokensBudget: 4000 },
+      requiresApprovalForActions: false,
+    });
+
+    // 19. Project Manager Agent
+    this.agents.set("project-manager-agent", {
+      id: "project-manager-agent",
+      name: "Project Manager Agent",
+      purpose: "Translates CEO strategic directives into operational task assignments for specialist agents, enforces step-by-step sequencing, and verifies completion.",
+      systemPrompt:
+        "You are the Project Manager Agent. You receive the CEO's strategic directives and audit findings, allocate work packages to specialist agents, monitor execution, and report final completion back to the CEO.",
+      inputSchema: z.object({
+        ceoDirectives: z.array(z.string()),
+        findings: z.array(z.any()),
+        operatingMode: z.enum(["MODE_A", "MODE_B"]),
+      }),
+      outputSchema: z.object({
+        delegatedTasks: z.array(
+          z.object({
+            title: z.string(),
+            assignedAgent: z.string(),
+            priority: z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]),
+            executionStrategy: z.enum(["CODE_PATCH", "CMS_API", "MANUAL_BRIEF"]),
+            phase: z.number(),
+          })
+        ),
+        operationalSummary: z.string(),
+      }),
+      allowedTools: ["save_roadmap_task"],
+      riskLevel: "LOW",
+      modelConfig: { temperature: 0.2 },
+      executionLimits: { maxIterations: 5, timeoutMs: 60000, maxRetries: 2, maxTokensBudget: 6000 },
+      requiresApprovalForActions: false,
+    });
   }
 }

@@ -18,6 +18,7 @@ import { ActivityLogTab } from "@/components/ActivityLogTab";
 import { SettingsTab } from "@/components/SettingsTab";
 import { BillingTab } from "@/components/BillingTab";
 import { NewProjectModal } from "@/components/NewProjectModal";
+import { CeoAutopilotModal } from "@/components/CeoAutopilotModal";
 
 export default function SaaSApp() {
   const [activeTab, setActiveTab] = useState<string>("overview");
@@ -26,6 +27,7 @@ export default function SaaSApp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
+  const [isAutopilotModalOpen, setIsAutopilotModalOpen] = useState<boolean>(false);
 
   // Load projects
   const fetchProjects = async (autoSelectId?: string) => {
@@ -112,6 +114,7 @@ export default function SaaSApp() {
         onSelectProject={(proj) => loadProjectDetails(proj.id)}
         onOpenNewProject={() => setIsNewProjectModalOpen(true)}
         onTriggerAudit={handleTriggerAudit}
+        onOpenAutopilot={() => setIsAutopilotModalOpen(true)}
         isAuditing={isAuditing}
       />
 
@@ -134,6 +137,7 @@ export default function SaaSApp() {
                   project={selectedProject}
                   onNavigateTab={(tab) => setActiveTab(tab)}
                   onTriggerAudit={handleTriggerAudit}
+                  onOpenAutopilot={() => setIsAutopilotModalOpen(true)}
                   isAuditing={isAuditing}
                 />
               )}
@@ -144,6 +148,7 @@ export default function SaaSApp() {
                 <RoadmapTab
                   project={selectedProject}
                   onRefreshProject={() => loadProjectDetails(selectedProject.id)}
+                  onOpenAutopilot={() => setIsAutopilotModalOpen(true)}
                 />
               )}
 
@@ -214,6 +219,18 @@ export default function SaaSApp() {
           fetchProjects(newProj.id);
         }}
       />
+
+      {/* Autonomous CEO & Project Manager Autopilot Modal */}
+      {selectedProject && (
+        <CeoAutopilotModal
+          isOpen={isAutopilotModalOpen}
+          onClose={() => setIsAutopilotModalOpen(false)}
+          project={selectedProject}
+          onComplete={() => {
+            loadProjectDetails(selectedProject.id);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -171,6 +171,66 @@ export class MockLLMProvider implements LLMProvider {
         status: "STAGED",
       };
     } else if (
+      name.includes("autonomous-ceo-agent") ||
+      conversation.includes("Autonomous CEO") ||
+      conversation.includes("strategicDirectives")
+    ) {
+      mockData = {
+        strategicDirectives: [
+          "Establish foundational technical crawl equity and fix indexation blockers",
+          "Inject structured data entities (Organization & WebSite) to secure rich snippets",
+          "Consolidate domain authority and eliminate internal duplicate URL canonical splits",
+          "Optimize Core Web Vitals to maintain sub-2.5s Largest Contentful Paint across key templates",
+        ],
+        primaryObjectives: [
+          "Attain 95%+ Technical SEO Health Score",
+          "Zero critical canonical or structured data validation errors",
+          "100% post-execution QA verification pass rate",
+        ],
+        targetHealthScore: 98,
+        ceoVision:
+          "Autonomous self-executing enterprise SEO operation maximizing organic traffic capture and search engine trust with zero human latency.",
+      };
+    } else if (
+      name.includes("project-manager-agent") ||
+      conversation.includes("Project Manager") ||
+      conversation.includes("delegatedTasks")
+    ) {
+      mockData = {
+        delegatedTasks: [
+          {
+            title: "Inject Root Organization JSON-LD Entity Graph",
+            assignedAgent: "structured-data-agent",
+            priority: "HIGH",
+            executionStrategy: "CODE_PATCH",
+            phase: 1,
+          },
+          {
+            title: "Patch Absolute Self-Referential Canonical Tag in Root Head",
+            assignedAgent: "code-implementation-agent",
+            priority: "HIGH",
+            executionStrategy: "CODE_PATCH",
+            phase: 1,
+          },
+          {
+            title: "Align Meta Description within 155-Character Snippet Limit",
+            assignedAgent: "content-creation-agent",
+            priority: "MEDIUM",
+            executionStrategy: "CODE_PATCH",
+            phase: 2,
+          },
+          {
+            title: "Optimize Image Dimensions & Alt Tags for Cumulative Layout Shift",
+            assignedAgent: "performance-agent",
+            priority: "MEDIUM",
+            executionStrategy: "CODE_PATCH",
+            phase: 2,
+          },
+        ],
+        operationalSummary:
+          "Deconstructed CEO directives into 4 phased, dependency-sequenced engineering work orders assigned to specialist agents for autonomous execution.",
+      };
+    } else if (
       name.includes("quality-assurance") ||
       conversation.includes("acceptanceCriteria")
     ) {
